@@ -26,7 +26,7 @@ func main() {
 		backupDir       = flag.String("backup-csv-dir", "", "Directory to write a timestamped backup CSV before modifying files")
 		logFile         = flag.String("log-file", "", "Append stderr-style logs to this file")
 		autofillExclude = flag.String("autofill-exclude-regex", "", "Regex to exclude filenames from --mode csv-autofill")
-		setBirth        = flag.Bool("set-birthtime", false, "Also set file creation time on macOS using SetFile")
+		setBirth        = flag.Bool("set-birthtime", false, "Also set file creation time on macOS/Windows")
 		dryRun          = flag.Bool("dry-run", false, "Print planned changes without modifying files")
 		timeLocal       = flag.String("timezone", "", "Optional IANA timezone name for parsing input times")
 	)

@@ -44,8 +44,8 @@ func Run(opts Options, out io.Writer) error {
 		return RunBatch(opts, out)
 	}
 
-	if opts.SetBirthTime && currentGOOS != "darwin" {
-		fmt.Fprintf(logWriter(opts), "warning: --set-birthtime is macOS-only; ignoring on %s\n", currentGOOS)
+	if opts.SetBirthTime && currentGOOS != "darwin" && currentGOOS != "windows" {
+		fmt.Fprintf(logWriter(opts), "warning: --set-birthtime is macOS/Windows-only; ignoring on %s\n", currentGOOS)
 		opts.SetBirthTime = false
 	}
 	if opts.SetBirthTime && !opts.DryRun {

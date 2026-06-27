@@ -10,11 +10,15 @@ var setFileLookPath = exec.LookPath
 var execCommand = exec.Command
 
 func setBirthTime(path string, t time.Time) error {
-	if currentGOOS != "darwin" {
+	switch currentGOOS {
+	case "darwin":
+		formatted := t.Format("01/02/2006 15:04:05")
+		return runSetFile(path, formatted)
+	case "windows":
+		return setBirthTimeWindows(path, t)
+	default:
 		return nil
 	}
-	formatted := t.Format("01/02/2006 15:04:05")
-	return runSetFile(path, formatted)
 }
 
 var runSetFile = func(path, formatted string) error {

@@ -11,8 +11,8 @@ func RunBatch(opts Options, out io.Writer) error {
 	if opts.BackupCSVDir == "" {
 		return fmt.Errorf("mode batch requires --backup-csv-dir")
 	}
-	if opts.SetBirthTime && currentGOOS != "darwin" {
-		fmt.Fprintf(logWriter(opts), "warning: --set-birthtime is macOS-only; ignoring on %s\n", currentGOOS)
+	if opts.SetBirthTime && currentGOOS != "darwin" && currentGOOS != "windows" {
+		fmt.Fprintf(logWriter(opts), "warning: --set-birthtime is macOS/Windows-only; ignoring on %s\n", currentGOOS)
 		opts.SetBirthTime = false
 	}
 

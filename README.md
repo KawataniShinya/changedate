@@ -18,6 +18,18 @@ Google Drive上で日付順に並べたいファイルのmtimeを揃える用途
 go build -o changedate ./cmd/changedate
 ```
 
+Windows向けバイナリをmacOS/Linuxからビルドする場合は次を使います。
+
+```bash
+GOOS=windows GOARCH=amd64 go build -o changedate.exe ./cmd/changedate
+```
+
+Windows上で直接ビルドする場合は次で十分です。
+
+```powershell
+go build -o changedate.exe ./cmd/changedate
+```
+
 ## 使い方
 
 `--files` を指定した場合は `--dir` より優先され、指定したファイルだけを対象にします。
@@ -30,12 +42,12 @@ go build -o changedate ./cmd/changedate
 `--mode batch` では現状のCSV出力、CSV自動補完、dry-run、本更新をまとめて実行します。
 `--mode batch` は `--dir` と `--backup-csv-dir` を指定して使います。
 CSVの日時は `2024-01-01 10:00:00` に加えて `20240101_100000` 形式も受け付けます。
-`--set-birthtime` または `--with-creation-time` を付けると、macOSでは `SetFile` を使って作成日時も更新します。
+`--set-birthtime` または `--with-creation-time` を付けると、macOSでは `SetFile`、Windowsでは標準APIを使って作成日時も更新します。
 `--backup-csv-dir` を付けると、変更前の状態を日付付きファイル名のCSVとして退避してから更新します。
 batch のバックアップCSVでは `path` は絶対パスで保存されます。
 `--log-file` を付けると、進捗ログや警告、エラーを追記保存できます。既存ファイルは消さずに末尾へ追記します。
 進捗ログは標準エラー出力に出します。CSV本体や dry-run の出力は標準出力のままです。
-Xcode Command Line Tools が必要で、Linuxではこの指定は警告を出して無視されます。
+macOSで作成日時更新を行う場合は Xcode Command Line Tools が必要です。Linuxではこの指定は警告を出して無視されます。
 
 ### 1. 一括日時設定
 
@@ -196,6 +208,21 @@ CSV に存在しないファイルパスが含まれている場合は、その�
 
 前2つはロールバック用のCSV、最後の1つは進捗や警告、エラーを確認するためのログです。
 
+Windowsで同じ内容を実行する場合は、PowerShell では次のように書けます。
+
+```powershell
+$ts = Get-Date -Format "yyyyMMdd-HHmmss"
+.\changedate.exe `
+  --dir .\photo `
+  --mode batch `
+  --backup-csv-dir .\backup `
+  --set-birthtime `
+  --autofill-exclude-regex '^PXL' `
+  --log-file ".\logs\changedate-$ts.log"
+```
+
+`cmd.exe` で実行する場合は、`Get-Date` 相当を別コマンドで用意するか、ログファイル名を固定してください。`$(date ...)` は Windows の `cmd.exe` では使えません。
+
 ## よく使う流れ
 
 頻度が高い想定のため、CSVを書き出して編集し、その内容で更新する流れをそのまま使える形で載せます。
@@ -224,7 +251,7 @@ CSV に存在しないファイルパスが含まれている場合は、その�
 
 ### 3. 更新日時と作成日時を対象に変更するCSVで dry-run
 
-`--set-birthtime` を付けると、macOSでは作成日時も更新対象になります。
+`--set-birthtime` を付けると、macOSでは SetFile、Windowsでは標準APIで作成日時も更新対象になります。
 
 ```bash
 ./changedate \
