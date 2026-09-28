@@ -63,7 +63,7 @@ Linux の SMB 共有での例:
   --timezone Asia/Tokyo
 ```
 
-Linux の CIFS マウントでは、SMB 経由で変更した作成日時が `stat` にすぐ反映されない場合があります。NAS 側の値は `smbclient //nas/share -A /path/to/smb-credentials -c 'allinfo photos/file.jpg'` で確認できます。
+Linux の CIFS マウントでは、SMB 経由で変更した作成日時を `stat` やファイルマネージャーが古い値のまま表示する場合があります。NAS 側の値は `smbclient //nas/share -A /path/to/smb-credentials -c 'allinfo photos/file.jpg'` で確認できます。マウント側の表示を更新するには、共有を使うアプリを閉じてアンマウント・再マウントしてください。`x-systemd.automount` を使う場合は、アンマウント後に対応する automount ユニットを起動し直してください。
 
 ### 1. 一括日時設定
 
