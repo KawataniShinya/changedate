@@ -42,26 +42,13 @@ func TestSetBirthTimeFormatsUSDate(t *testing.T) {
 	}
 }
 
-func TestSetBirthTimeIgnoredOutsideMac(t *testing.T) {
+func TestLinuxBirthTimeRequiresSMBConfiguration(t *testing.T) {
 	origGOOS := currentGOOS
-	origRunSetFile := runSetFile
-	t.Cleanup(func() {
-		currentGOOS = origGOOS
-		runSetFile = origRunSetFile
-	})
-
+	t.Cleanup(func() { currentGOOS = origGOOS })
 	currentGOOS = "linux"
-	called := false
-	runSetFile = func(path, formatted string) error {
-		called = true
-		return nil
-	}
-
-	if err := setBirthTime("dummy", time.Now()); err != nil {
-		t.Fatalf("setBirthTime: %v", err)
-	}
-	if called {
-		t.Fatal("runSetFile should not be called on non-macOS")
+	err := validateBirthTimeOptions(Options{SetBirthTime: true})
+	if err == nil || !strings.Contains(err.Error(), "--smb-share") {
+		t.Fatalf("expected SMB configuration error, got %v", err)
 	}
 }
 

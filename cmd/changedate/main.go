@@ -26,7 +26,10 @@ func main() {
 		backupDir       = flag.String("backup-csv-dir", "", "Directory to write a timestamped backup CSV before modifying files")
 		logFile         = flag.String("log-file", "", "Append stderr-style logs to this file")
 		autofillExclude = flag.String("autofill-exclude-regex", "", "Regex to exclude filenames from --mode csv-autofill")
-		setBirth        = flag.Bool("set-birthtime", false, "Also set file creation time on macOS/Windows")
+		setBirth        = flag.Bool("set-birthtime", false, "Also set file creation time on macOS/Windows, or Linux SMB shares")
+		smbShare        = flag.String("smb-share", "", "SMB share for Linux creation time updates (e.g. //server/share)")
+		smbRoot         = flag.String("smb-root", "", "Local mount root corresponding to --smb-share")
+		smbAuthFile     = flag.String("smb-auth-file", "", "smbclient authentication file for Linux creation time updates")
 		dryRun          = flag.Bool("dry-run", false, "Print planned changes without modifying files")
 		timeLocal       = flag.String("timezone", "", "Optional IANA timezone name for parsing input times")
 	)
@@ -68,6 +71,9 @@ func main() {
 		DryRun:               *dryRun,
 		Location:             loc,
 		SetBirthTime:         *setBirth,
+		SMBShare:             *smbShare,
+		SMBRoot:              *smbRoot,
+		SMBAuthFile:          *smbAuthFile,
 		BackupCSVDir:         *backupDir,
 		LogWriter:            logSink,
 		AutofillExcludeRegex: *autofillExclude,

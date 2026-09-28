@@ -44,14 +44,8 @@ func Run(opts Options, out io.Writer) error {
 		return RunBatch(opts, out)
 	}
 
-	if opts.SetBirthTime && currentGOOS != "darwin" && currentGOOS != "windows" {
-		fmt.Fprintf(logWriter(opts), "warning: --set-birthtime is macOS/Windows-only; ignoring on %s\n", currentGOOS)
-		opts.SetBirthTime = false
-	}
-	if opts.SetBirthTime && !opts.DryRun {
-		if err := ensureSetFileAvailable(); err != nil {
-			return err
-		}
+	if err := validateBirthTimeOptions(opts); err != nil {
+		return err
 	}
 
 	files, err := collectTargets(opts)
@@ -66,6 +60,15 @@ func Run(opts Options, out io.Writer) error {
 			return fmt.Errorf("no valid target files found in --files")
 		}
 		return fmt.Errorf("no target files found in %s", opts.Dir)
+	}
+	if opts.SetBirthTime && currentGOOS == "linux" {
+		for _, file := range files {
+			if !file.Skipped {
+				if _, err := smbRemotePath(opts.SMBRoot, file.Path); err != nil {
+					return err
+				}
+			}
+		}
 	}
 	fmt.Fprintf(logWriter(opts), "%s: %d target files\n", opts.Mode, len(files))
 
@@ -110,13 +113,18 @@ func Run(opts Options, out io.Writer) error {
 			if err := os.Chtimes(file.Path, file.ModTime, after); err != nil {
 				return fmt.Errorf("chtimes %s: %w", file.Path, err)
 			}
-			if opts.SetBirthTime {
+			if opts.SetBirthTime && currentGOOS != "linux" {
 				if err := setBirthTime(file.Path, after); err != nil {
 					return fmt.Errorf("set birth time %s: %w", file.Path, err)
 				}
 			}
 		}
 		changes = append(changes, ch)
+	}
+	if opts.SetBirthTime && currentGOOS == "linux" && !opts.DryRun {
+		if err := setBirthTimesSMB(opts, changes); err != nil {
+			return err
+		}
 	}
 	progress.Done("processing complete")
 
