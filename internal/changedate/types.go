@@ -24,6 +24,9 @@ type Options struct {
 	DryRun               bool
 	Location             *time.Location
 	SetBirthTime         bool
+	SMBShare             string
+	SMBRoot              string
+	SMBAuthFile          string
 	BackupCSVDir         string
 	LogWriter            io.Writer
 	AutofillExcludeRegex string

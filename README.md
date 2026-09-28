@@ -42,12 +42,28 @@ go build -o changedate.exe ./cmd/changedate
 `--mode batch` では現状のCSV出力、CSV自動補完、dry-run、本更新をまとめて実行します。
 `--mode batch` は `--dir` と `--backup-csv-dir` を指定して使います。
 CSVの日時は `2024-01-01 10:00:00` に加えて `20240101_100000` 形式も受け付けます。
-`--set-birthtime` または `--with-creation-time` を付けると、macOSでは `SetFile`、Windowsでは標準APIを使って作成日時も更新します。
+`--set-birthtime` または `--with-creation-time` を付けると、macOSでは `SetFile`、Windowsでは標準APIを使って作成日時も更新します。Linuxでは SMB 共有に対して `smbclient` を使います。
 `--backup-csv-dir` を付けると、変更前の状態を日付付きファイル名のCSVとして退避してから更新します。
 batch のバックアップCSVでは `path` は絶対パスで保存されます。
 `--log-file` を付けると、進捗ログや警告、エラーを追記保存できます。既存ファイルは消さずに末尾へ追記します。
 進捗ログは標準エラー出力に出します。CSV本体や dry-run の出力は標準出力のままです。
-macOSで作成日時更新を行う場合は Xcode Command Line Tools が必要です。Linuxではこの指定は警告を出して無視されます。
+macOSで作成日時更新を行う場合は Xcode Command Line Tools が必要です。Linuxで指定する場合は `smbclient` と `--smb-share`、`--smb-root`、`--smb-auth-file` が必要です。SMB 認証ファイルは `smbclient -A` の形式で用意してください。更新日時を設定した後、同じ対象の作成日時を SMB 経由で設定します。SMB コマンドでエラーが起きた場合はエラーを返します。
+
+Linux の SMB 共有での例:
+
+```bash
+./changedate \
+  --dir /mnt/nas/photos \
+  --mode batch \
+  --backup-csv-dir /mnt/nas/toolChangeDate/backup \
+  --set-birthtime \
+  --smb-share //nas/share \
+  --smb-root /mnt/nas \
+  --smb-auth-file /path/to/smb-credentials \
+  --timezone Asia/Tokyo
+```
+
+Linux の CIFS マウントでは、SMB 経由で変更した作成日時が `stat` にすぐ反映されない場合があります。NAS 側の値は `smbclient //nas/share -A /path/to/smb-credentials -c 'allinfo photos/file.jpg'` で確認できます。
 
 ### 1. 一括日時設定
 
@@ -251,7 +267,7 @@ $ts = Get-Date -Format "yyyyMMdd-HHmmss"
 
 ### 3. 更新日時と作成日時を対象に変更するCSVで dry-run
 
-`--set-birthtime` を付けると、macOSでは SetFile、Windowsでは標準APIで作成日時も更新対象になります。
+`--set-birthtime` を付けると、macOSでは SetFile、Windowsでは標準API、Linux の SMB 共有では `smbclient` で作成日時も更新対象になります。Linux では上記の SMB オプションも指定してください。
 
 ```bash
 ./changedate \
