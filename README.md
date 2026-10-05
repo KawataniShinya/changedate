@@ -65,6 +65,41 @@ Linux の SMB 共有での例:
 
 Linux の CIFS マウントでは、SMB 経由で変更した作成日時を `stat` やファイルマネージャーが古い値のまま表示する場合があります。NAS 側の値は `smbclient //nas/share -A /path/to/smb-credentials -c 'allinfo photos/file.jpg'` で確認できます。マウント側の表示を更新するには、共有を使うアプリを閉じてアンマウント・再マウントしてください。`x-systemd.automount` を使う場合は、アンマウント後に対応する automount ユニットを起動し直してください。
 
+### Ubuntu での cron 実行
+
+`scripts/changedate-ubuntu.sh` は、CIFS 共有が書き込み可能であることを確認し、ロックで重複実行を防いで batch 更新を実行します。`changedate-linux` をツール用ディレクトリに配置して使います。
+
+環境に合わせて次の起動用スクリプトをローカルに保存してください。認証情報そのものは記述せず、SMB 認証ファイルのパスを指定します。
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+export CHANGEDATE_TOOL_DIR=/mnt/nas/share/toolChangeDate
+export CHANGEDATE_PHOTO_DIR=/mnt/nas/share/photos
+export CHANGEDATE_SMB_SHARE=//nas/share
+export CHANGEDATE_SMB_ROOT=/mnt/nas/share
+export CHANGEDATE_SMB_AUTH_FILE=/path/to/smb-credentials
+exec /bin/bash /path/to/changedate/scripts/changedate-ubuntu.sh
+```
+
+必要なコマンドは `findmnt`、`flock`、`grep`、`date`、`smbclient` です。タイムゾーンは既定で `Asia/Tokyo`、ロックファイルは `/tmp/changedate-ubuntu.lock` です。`CHANGEDATE_TIMEZONE`、`CHANGEDATE_LOCK_FILE` で変更できます。NAS を再マウントするスクリプトと併用するときは、同じロックファイルを使ってください。
+
+毎時30分に実行する cron の例:
+
+```cron
+30 * * * * /bin/bash /path/to/launcher.sh >> /path/to/local/cron.log 2>&1
+```
+
+cron のログは NAS 外のローカルに保存してください。マウント判定で停止した場合、NAS 側の実行ログは作成されず、このログに理由が記録されます。
+
+`x-systemd.automount` を使う環境では、`findmnt -T` が同じパスに対して `autofs` と `cifs` の両方を返す場合があります。スクリプトはファイルシステム種別・マウントオプションの両方の照会を `-t cifs` で絞り込み、書き込み可能な CIFS を誤って未マウント扱いしないようにしています。CIFS が存在しない場合や読み取り専用の場合は処理を停止します。
+
+マウント判定の回帰テスト（NAS ファイルは変更しません）:
+
+```bash
+python3 -m unittest discover -s scripts/tests -v
+```
+
 ### 1. 一括日時設定
 
 すべての対象ファイルに同じ日時を適用します。
